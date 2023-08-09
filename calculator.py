@@ -303,27 +303,53 @@ class MainWindow(QWidget):
         # for btn in [self.equal, self.clear, self.clear_error, self.back]:
             # self.btngrp_function.addButton(btn)
         
-        for btn in [self.dot, self.percent, self.negative]:
-            self.btngrp_attr.addButton(btn)
+        # for btn in [self.dot, self.percent, self.negative]:
+        #     self.btngrp_attr.addButton(btn)
 
         self.back.clicked.connect(self.Back)
         self.clear.clicked.connect(self.Clear)
         self.equal.clicked.connect(self.Equal)
 
+        self.dot.clicked.connect(self.Add_dot)
+        self.percent.clicked.connect(self.Percentage)
+        self.negative.clicked.connect(self.Negative)
+
         self.temp_btn = ''
-        self.btngrp_attr.buttonClicked.connect(self.changeAttr)
+        
+        # self.btngrp_attr.buttonClicked.connect(self.changeAttr)
         self.btngrp_operator.buttonClicked.connect(self.operate)
         self.btngrp_number.buttonClicked.connect(self.num)
 
-    def changeAttr(self, btn):
-        print(btn.objectName())
+    def Add_dot(self):
+        temp_text = self.Blabel.text()
+        
+        if '.' in temp_text:
+            return
+        
+        self.Blabel.setText(temp_text + '.')
+        
+        # self.temp_btn = self.dot
+        
+    def Percentage(self):
+        pass
+
+    def Negative(self):
+        temp_text = self.Blabel.text()
+
+        if temp_text[0] == self.negative.text():
+            self.Blabel.setText(temp_text[1:])
+            return
+        
+        self.Blabel.setText("-" + temp_text)
+        
+
 
     def Back(self):
         
         curr_text = self.Blabel.text()
 
         if self.temp_btn == self.equal:
-            self.slabel = ""
+            self.slabel.setText('')
             self.Blabel.setText('0')
         else:
 
@@ -343,37 +369,79 @@ class MainWindow(QWidget):
 
     def Equal(self):
         
-        temp_text = self.slabel.text() + ' ' + self.Blabel.text()
-        num1, op, num2 = temp_text.split(' ')
+        if self.temp_btn == None:
+            return
 
-        if num1.isnumeric():
-            num1 = int(num1)
-        else:
-            num1 = float(num1)
-        
-        if num2.isnumeric():
-            num2 = int(num2)
-        else:
-            num2 = float(num2)
-
-        ret = 0
-        if op == "+":
-            ret = num1 + num2
-        elif op == "–":
-            ret = num1 - num2
-        elif op == "×":
-            ret = num1 * num2
-        else:
-            ret = num1 / num2
-            if ret == round(ret):
-                ret = round(ret)
+        elif self.temp_btn == self.equal:
+            temp_text = self.slabel.text().split(' ')
+            _, op, num2, equal_sign = temp_text.split(' ')
+            num1 = self.Blabel.text()
+            if num1.lstrip('-').isnumeric():
+                num1 = int(num1)
             else:
-                pass
-        
-        self.Blabel.setText(f"{ret}")
-        self.slabel.setText(f"{num1} {op} {num2} =")
+                num1 = float(num1)
+            
+            if num2.lstrip('-').isnumeric():
+                num2 = int(num2)
+            else:
+                num2 = float(num2)
+
+            ret = 0
+            if op == "+":
+                ret = num1 + num2
+            elif op == "–":
+                ret = num1 - num2
+            elif op == "×":
+                ret = num1 * num2
+            else:
+                ret = num1 / num2
+                if ret == round(ret):
+                    ret = round(ret)
+                else:
+                    pass
+            self.Blabel.setText(f"{ret}")
+            self.slabel.setText(f"{num1} {op} {num2} =")
+
+        elif not self.slabel.text() or self.slabel.text()[-1] == '=':
+            ret = self.Blabel.text()
+
+            if ret.isnumeric():
+                ret = int(ret)
+            else:
+                ret = float(ret)
+            self.slabel.setText(f"{ret}" + ' ' + '=')
+            self.Blabel.setText(f"{ret}")
+        else:
+            temp_text = self.slabel.text() + ' ' + self.Blabel.text()
+            num1, op, num2 = temp_text.split(' ')
+
+            if num1.lstrip('-').isnumeric():
+                num1 = int(num1)
+            else:
+                num1 = float(num1)
+            
+            if num2.lstrip('-').isnumeric():
+                num2 = int(num2)
+            else:
+                num2 = float(num2)
+
+            ret = 0
+            if op == "+":
+                ret = num1 + num2
+            elif op == "–":
+                ret = num1 - num2
+            elif op == "×":
+                ret = num1 * num2
+            else:
+                ret = num1 / num2
+                if ret == round(ret):
+                    ret = round(ret)
+                else:
+                    pass
+            self.Blabel.setText(f"{ret}")
+            self.slabel.setText(f"{num1} {op} {num2} =")
         self.temp_btn = self.equal
-    
+
     def operate(self, btn):
         
         curr_text = self.Blabel.text()
@@ -412,7 +480,7 @@ class MainWindow(QWidget):
 
         else:
             if curr_text == number:
-                self.temp_btn = None
+                self.temp_btn = ''
             else:
                 self.Blabel.setText(number)
                 self.temp_btn = btn
