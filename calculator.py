@@ -1,7 +1,54 @@
 from PySide2.QtCore import QRect, QCoreApplication, QMetaObject
 from PySide2.QtGui import QFont, Qt
 from PySide2.QtWidgets import QApplication, QWidget, QPushButton, QGridLayout, QLabel, QButtonGroup, QLineEdit
+from decimal import Decimal
 
+class FixedDecimal:
+    def __init__(self, value, precision=6):
+        self.precision = precision
+        self.value = int(value * (10 ** precision))
+        
+    def __repr__(self):
+        return f"{self.value / (10 ** self.precision)}"
+        
+    def _adjust_precision(self, other):
+        if self.precision < other.precision:
+            self.value *= 10 ** (other.precision - self.precision)
+            self.precision = other.precision
+        elif self.precision > other.precision:
+            other.value *= 10 ** (self.precision - other.precision)
+            other.precision = self.precision
+            
+    def __add__(self, other):
+        if isinstance(other, FixedDecimal):
+            self._adjust_precision(other)
+            return FixedDecimal(self.value + other.value, self.precision)
+        else:
+            raise TypeError("Unsupported operand type")
+            
+    def __sub__(self, other):
+        if isinstance(other, FixedDecimal):
+            self._adjust_precision(other)
+            return FixedDecimal(self.value - other.value, self.precision)
+        else:
+            raise TypeError("Unsupported operand type")
+            
+    def __mul__(self, other):
+        if isinstance(other, FixedDecimal):
+            new_precision = self.precision + other.precision
+            result = (self.value * other.value) / (10 ** new_precision)
+            return FixedDecimal(result, new_precision)
+        else:
+            raise TypeError("Unsupported operand type")
+            
+    def __truediv__(self, other):
+        if isinstance(other, FixedDecimal):
+            self._adjust_precision(other)
+            new_precision = self.precision + other.precision
+            result = self.value / other.value
+            return FixedDecimal(result, new_precision)
+        else:
+            raise TypeError("Unsupported operand type")
 
 button_style = '''QPushButton {color: rgb(0, 0, 0);
                             background: rgba(126, 198, 224, 1);
@@ -328,10 +375,21 @@ class MainWindow(QWidget):
         
         self.Blabel.setText(temp_text + '.')
         
-        # self.temp_btn = self.dot
+        self.temp_btn = self.dot
         
     def Percentage(self):
-        pass
+        temp_text = self.Blabel.text()
+        if temp_text.lstrip('-').isdigit():
+            temp_text = int(temp_text)
+        else:
+            temp_text = float(temp_text)
+
+        temp_text = temp_text * 0.01
+
+        self.Blabel.setText(f"{temp_text:<f}")
+
+        if self.temp_btn == self.equal:
+            self.slabel.setText('')
 
     def Negative(self):
         temp_text = self.Blabel.text()
@@ -477,6 +535,10 @@ class MainWindow(QWidget):
             
             self.Blabel.setText(curr_text+number)
             self.temp_btn = btn
+
+        elif self.temp_btn == self.dot:
+            self.temp_btn = btn
+            self.Blabel.setText(curr_text+number)
 
         else:
             if curr_text == number:
