@@ -1,7 +1,6 @@
 from PySide2.QtCore import QRect, QCoreApplication, QMetaObject
 from PySide2.QtGui import QFont, Qt
 from PySide2.QtWidgets import QApplication, QWidget, QPushButton, QGridLayout, QLabel, QButtonGroup, QLineEdit
-from decimal import Decimal
 
 class FixedDecimal:
     def __init__(self, value, precision=6):
@@ -9,7 +8,15 @@ class FixedDecimal:
         self.value = int(value * (10 ** precision))
         
     def __repr__(self):
-        return f"{self.value / (10 ** self.precision)}"
+
+        text = f"{self.value / (10 ** self.precision)}"
+
+        texts = text.split('.')
+        if int(texts[1]) == 0:
+            text = texts[0]
+
+        return text
+
         
     def _adjust_precision(self, other):
         if self.precision < other.precision:
@@ -22,14 +29,14 @@ class FixedDecimal:
     def __add__(self, other):
         if isinstance(other, FixedDecimal):
             self._adjust_precision(other)
-            return FixedDecimal(self.value + other.value, self.precision)
+            return FixedDecimal((self.value + other.value) / (10 ** self.precision), self.precision)
         else:
             raise TypeError("Unsupported operand type")
             
     def __sub__(self, other):
         if isinstance(other, FixedDecimal):
             self._adjust_precision(other)
-            return FixedDecimal(self.value - other.value, self.precision)
+            return FixedDecimal((self.value - other.value) / (10 ** self.precision), self.precision)
         else:
             raise TypeError("Unsupported operand type")
             
@@ -356,6 +363,7 @@ class MainWindow(QWidget):
         self.back.clicked.connect(self.Back)
         self.clear.clicked.connect(self.Clear)
         self.equal.clicked.connect(self.Equal)
+        self.clear_error.clicked.connect(self.Clear_Error)
 
         self.dot.clicked.connect(self.Add_dot)
         self.percent.clicked.connect(self.Percentage)
@@ -366,6 +374,11 @@ class MainWindow(QWidget):
         # self.btngrp_attr.buttonClicked.connect(self.changeAttr)
         self.btngrp_operator.buttonClicked.connect(self.operate)
         self.btngrp_number.buttonClicked.connect(self.num)
+
+    def Clear_Error(self):
+        if self.temp_btn == self.equal:
+            self.slabel.setText('')
+        self.Blabel.setText('0')
 
     def Add_dot(self):
         temp_text = self.Blabel.text()
@@ -379,14 +392,16 @@ class MainWindow(QWidget):
         
     def Percentage(self):
         temp_text = self.Blabel.text()
-        if temp_text.lstrip('-').isdigit():
+
+        if temp_text.isnumeric():
             temp_text = int(temp_text)
         else:
             temp_text = float(temp_text)
 
-        temp_text = temp_text * 0.01
+        temp_text = FixedDecimal(temp_text)
+        temp_text = temp_text * FixedDecimal(0.01)
 
-        self.Blabel.setText(f"{temp_text:<f}")
+        self.Blabel.setText(f"{temp_text}")
 
         if self.temp_btn == self.equal:
             self.slabel.setText('')
@@ -431,9 +446,10 @@ class MainWindow(QWidget):
             return
 
         elif self.temp_btn == self.equal:
-            temp_text = self.slabel.text().split(' ')
-            _, op, num2, equal_sign = temp_text.split(' ')
+            # temp_text = 
+            _, op, num2, equal_sign = self.slabel.text().split(' ')
             num1 = self.Blabel.text()
+
             if num1.lstrip('-').isnumeric():
                 num1 = int(num1)
             else:
@@ -444,6 +460,8 @@ class MainWindow(QWidget):
             else:
                 num2 = float(num2)
 
+            num1 = FixedDecimal(num1)
+            num2 = FixedDecimal(num2)
             ret = 0
             if op == "+":
                 ret = num1 + num2
@@ -453,10 +471,10 @@ class MainWindow(QWidget):
                 ret = num1 * num2
             else:
                 ret = num1 / num2
-                if ret == round(ret):
-                    ret = round(ret)
-                else:
-                    pass
+                # if ret == round(ret):
+                #     ret = round(ret)
+                # else:
+                #     pass
             self.Blabel.setText(f"{ret}")
             self.slabel.setText(f"{num1} {op} {num2} =")
 
@@ -467,6 +485,8 @@ class MainWindow(QWidget):
                 ret = int(ret)
             else:
                 ret = float(ret)
+
+            ret = FixedDecimal(ret)
             self.slabel.setText(f"{ret}" + ' ' + '=')
             self.Blabel.setText(f"{ret}")
         else:
@@ -482,7 +502,9 @@ class MainWindow(QWidget):
                 num2 = int(num2)
             else:
                 num2 = float(num2)
-
+                
+            num1 = FixedDecimal(num1)
+            num2 = FixedDecimal(num2)
             ret = 0
             if op == "+":
                 ret = num1 + num2
@@ -492,10 +514,10 @@ class MainWindow(QWidget):
                 ret = num1 * num2
             else:
                 ret = num1 / num2
-                if ret == round(ret):
-                    ret = round(ret)
-                else:
-                    pass
+                # if ret == round(ret):
+                #     ret = round(ret)
+                # else:
+                #     pass
             self.Blabel.setText(f"{ret}")
             self.slabel.setText(f"{num1} {op} {num2} =")
         self.temp_btn = self.equal
