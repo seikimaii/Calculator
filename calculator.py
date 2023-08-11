@@ -80,6 +80,7 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.resize(800, 600)
+        self.setMinimumSize(800, 600)
         self.setWindowTitle("Calculator")
 
         font = QFont()
@@ -330,7 +331,7 @@ class MainWindow(QWidget):
         GridLayout.addWidget(self.four, 5, 0, 1, 1)
         GridLayout.addWidget(self.one, 6, 0, 1, 1)
         GridLayout.addWidget(self.Blabel, 1, 0, 1, 4)
-        GridLayout.addWidget(self.slabel, 0, 2, 1, 2)
+        GridLayout.addWidget(self.slabel, 0, 0, 1, 4)
 
         # GridLayout.setRowStretch(0, 3)
         # GridLayout.setRowStretch(1, 1)
@@ -408,12 +409,12 @@ class MainWindow(QWidget):
 
     def Negative(self):
         temp_text = self.Blabel.text()
-
-        if temp_text[0] == self.negative.text():
-            self.Blabel.setText(temp_text[1:])
-            return
+        if temp_text != '0':
+            if temp_text[0] == self.negative.text():
+                self.Blabel.setText(temp_text[1:])
+                return
         
-        self.Blabel.setText("-" + temp_text)
+            self.Blabel.setText("-" + temp_text)
         
 
 
@@ -524,8 +525,43 @@ class MainWindow(QWidget):
 
     def operate(self, btn):
         
+        new_op = btn.text()
         curr_text = self.Blabel.text()
-        self.slabel.setText(curr_text + " " + btn.text())
+        temp_text = self.slabel.text().split(' ')
+
+        if len(temp_text) == 2:
+            num1, op = temp_text
+            num2 = curr_text
+
+            if num1.lstrip('-').isnumeric():
+                num1 = int(num1)
+            else:
+                num1 = float(num1)
+            
+            if num2.lstrip('-').isnumeric():
+                num2 = int(num2)
+            else:
+                num2 = float(num2)
+
+            num1 = FixedDecimal(num1)
+            num2 = FixedDecimal(num2)
+
+            ret = 0
+            if op == "+":
+                ret = num1 + num2
+            elif op == "–":
+                ret = num1 - num2
+            elif op == "×":
+                ret = num1 * num2
+            else:
+                ret = num1 / num2
+            
+            self.Blabel.setText(f'{ret}')
+            self.slabel.setText(f'{ret} {new_op}')
+            
+
+        else:
+            self.slabel.setText(curr_text + " " + btn.text())
 
         self.temp_btn = btn
         
@@ -559,6 +595,10 @@ class MainWindow(QWidget):
             self.temp_btn = btn
 
         elif self.temp_btn == self.dot:
+            self.temp_btn = btn
+            self.Blabel.setText(curr_text+number)
+
+        elif self.temp_btn.text() == '0' and curr_text != '0':
             self.temp_btn = btn
             self.Blabel.setText(curr_text+number)
 
